@@ -22,7 +22,9 @@ with open(sys.argv[1], 'r') as infile:
 
                 var, val = line.split('=')
 
-                if var == 'title':
+                if var == 'logo':
+                    logo = val.strip()
+                elif var == 'title':
                     title = val.strip()
                 elif var == 'author':
                     author = val.strip()
@@ -37,7 +39,9 @@ with open(sys.argv[1], 'r') as infile:
 
                 line = infile.readline()
                 while line.startswith(' ') or line.startswith('\t'):
-                    if var == 'title':
+                    if var == 'logo':
+                        logo += ' ' + line.strip()
+                    elif var == 'title':
                         title += ' ' + line.strip()
                     elif var == 'author':
                         author += ' ' + line.strip()
@@ -68,6 +72,7 @@ with open(sys.argv[1], 'r') as infile:
 \usepackage[usenames,dvipsnames]{xcolor}
 \usepackage{sectsty}
 \usepackage{lipsum}
+\usepackage{listings}
 \setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
 
 \title{''' + title + r'''}
@@ -82,7 +87,7 @@ with open(sys.argv[1], 'r') as infile:
 
 \pagestyle{fancy}
 \fancyhf{}
-\lhead{\includegraphics[height=1.5 cm]{shield.png}}
+\lhead{\includegraphics[height=1.5 cm]{''' + logo + r'''}}
 \rhead{\thetitle\text{ - }\theauthor}
 \cfoot{\thepage}
 
@@ -192,6 +197,57 @@ with open(sys.argv[1], 'r') as infile:
   \textbf{Remediation:} &
   ''' + remediation + r''' \\[0.5 cm]
 \end{tabular}
+''')
+            elif line == '...\n':
+                line = infile.readline()
+
+                while line != '...\n':
+                    if not line.strip():
+                        line = infile.readline()
+                        continue
+
+                    var, val = line.split('=')
+
+                    if var == 'graphic':
+                        graphic = val.strip()
+                    elif var == 'caption':
+                        caption = val.strip()
+                    elif var == 'label':
+                        label = val.strip()
+
+                    line = infile.readline()
+                    while line.startswith(' ') or line.startswith('\t'):
+                        if var == 'graphic':
+                            graphic += ' ' + line.strip()
+                        elif var == 'caption':
+                            caption += ' ' + line.strip()
+                        elif var == 'label':
+                            label += ' ' + line.strip()
+
+                        line = infile.readline()
+
+                outfile.write(r'''\begin{figure}[h]
+  \centering
+  \includegraphics[height=3.0 cm]{''' + graphic + r'''}
+  \caption{''' + caption + r'''}
+  \label{''' + label + r'''}
+\end{figure}
+''')
+            elif line.startswith('```'):
+                if len(line) > 3:
+                    outfile.write(r'''\begin{lstlisting}[language=''' + line[3:-1] + r''']
+''')
+                else:
+                    outfile.write(r'''\begin{lstlisting}
+''')
+
+                line = infile.readline()
+
+                while line != '```\n':
+                    outfile.write(line)
+                    line = infile.readline()
+
+                outfile.write(r'''\end{lstlisting}
 ''')
             elif line == '...\n':
                 line = infile.readline()

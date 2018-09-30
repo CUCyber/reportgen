@@ -1,8 +1,9 @@
-PDF!=find . -name '*.md' | sed -e 's/\.md$$/.pdf/'
+PDF!=find * -type f -a -not \( -name 'LICENSE.md' -o -name 'README.md' \) -name '*.md' | sed -e 's/\.md$$/.pdf/'
 
 all: $(PDF)
 
 clean:
+	rm -f *.tex
 	rm -f *.pdf
 
 open: all
@@ -11,7 +12,6 @@ open: all
 %.pdf: %.tex
 	latexmk -pdf $^
 	latexmk -c $^
-	rm $^
 
 %.tex: %.md
 	./convert.py $^ $@

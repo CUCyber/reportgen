@@ -1,4 +1,5 @@
 ===
+logo=shield.png
 title=Penetration Test Report
 date=\today
 
@@ -70,6 +71,21 @@ remediation=
 In conclusion, ...
 
 ## Recommendations
+
+
+# Attack Narrative
+
+## Nmap shell
+
+```c
+int main() {
+	return 0;
+}
+```
+
+```
+$ nmap -A 
+```
 
 ...
 graphic=shield.png
