@@ -9,40 +9,43 @@ In this repository is a penetration testing report generation tool.
 * make
 * git
 * python
+* texlive-latexextra
+* latexmk
 
 
 ### Debian/Ubuntu/Kali
 
 ```sh
-$ sudo apt install make git
+$ sudo apt install make git texlive-latex-extra latexmk
 ```
 
 
 ### RedHat/CentOS
 
 ```sh
-$ sudo yum install make git
+$ sudo yum install epel-release
+$ sudo yum install make git texlive-collection-latexextra latexmk
 ```
 
 
 ### Fedora
 
 ```sh
-$ sudo dnf install make git
+$ sudo dnf install make git texlive-collection-latexextra latexmk
 ```
 
 
 ### Arch
 
 ```sh
-$ sudo pacman -S make git
+$ sudo pacman -S make git texlive-latexextra latex-mk
 ```
 
 
 ### Gentoo
 
 ```sh
-$ sudo emerge dev-vcs/git
+$ sudo emerge dev-vcs/git dev-texlive/texlive-latexextra dev-tex/latexmk
 ```
 
 
