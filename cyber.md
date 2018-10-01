@@ -10,7 +10,19 @@ address2=Address2
 company=Wheelz
 ===
 
-# Vulnerability Detail and Mitigation
+# Executive Summary
+
+Lorum ipsum...
+
+# Objectives and Scope
+
+# Impact Summary
+
+# Identified Strengths
+
+# Results Summary
+
+# Vulnerability Details
 
 ## Default or Weak Credentials
 
@@ -23,7 +35,7 @@ description=
 	asdf
 impact=
 	asdf
-remediation=
+recommendation=
 	asdf
 ---
 
@@ -36,7 +48,7 @@ description=
 	asdf
 impact=
 	asdf
-remediation=
+recommendation=
 	asdf
 ---
 
@@ -49,7 +61,7 @@ description=
 	_asdf_
 impact=
 	__asdf__
-remediation=
+recommendation=
 	___asdf___
 ---
 
@@ -62,7 +74,7 @@ description=
 	asdf
 impact=
 	asdf
-remediation=
+recommendation=
 	asdf
 ---
 
@@ -73,7 +85,7 @@ In conclusion^not actually a conclusion^, ...
 ## Recommendations
 
 
-# Attack Narrative
+# Appendix A: Attack Narrative
 
 ## Nmap shell
 

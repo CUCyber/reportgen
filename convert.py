@@ -103,15 +103,15 @@ section = r'''
 \section{%title%}
 '''
 
-vuln = r'''\begin{tabular}{p{3 cm}p{7 cm}}
+vuln = r'''\begin{tabular}{p{4 cm}p{7 cm}}
   \textbf{Rating:} &
   \textcolor{%color%}{\textbf{%rating%}} \\[0.5 cm]
   \textbf{Description:} &
   %description% \\[0.5 cm]
   \textbf{Impact:} &
   %impact% \\[0.5 cm]
-  \textbf{Remediation:} &
-  %remediation% \\[0.5 cm]
+  \textbf{Recommendation:} &
+  %recommendation% \\[0.5 cm]
 \end{tabular}
 '''
 figure = r'''\begin{figure}[h]
@@ -154,8 +154,8 @@ def format(text):
     text = re.sub(r'__([^_]*)__', replace(bold.replace('\\', '\\\\'), {'text': r'\1'}), text)
     text = re.sub(r'_([^_]*)_', replace(italic.replace('\\', '\\\\'), {'text': r'\1'}), text)
 
-    text = re.sub(r'(?<!\\)\^([^^]*)[^\\]\^', replace(footnote.replace('\\', '\\\\'), {'footnote': r'\1'}), text)
-    text = re.sub(r'(?<!\\)\$([^$]*)[^\\]\$', replace(ref.replace('\\', '\\\\'), {'ref': r'\1'}), text)
+    text = re.sub(r'(?<!\\)\^([^^]*)\^', replace(footnote.replace('\\', '\\\\'), {'footnote': r'\1'}), text)
+    text = re.sub(r'(?<!\\)\$([^$]*)\$', replace(ref.replace('\\', '\\\\'), {'ref': r'\1'}), text)
 
     text = text.replace(r'#', r'\#')
     text = text.replace(r'$', r'\$')
