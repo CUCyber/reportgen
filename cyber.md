@@ -78,11 +78,11 @@ recommendation=
 	asdf
 ---
 
+# Recommendations
+
 # Conclusion
 
 In conclusion^not actually a conclusion^, ...
-
-## Recommendations
 
 
 # Appendix A: Attack Narrative
