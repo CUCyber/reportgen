@@ -71,7 +71,7 @@ preamble = r'''\documentclass[12pt]{report}
   {
     \centering
     \vspace*{0.5 cm}
-    \includegraphics[width=5.0 cm]{shield.png}\\[1.0 cm]
+    \includegraphics[width=5.0 cm]{%logo%}\\[1.0 cm]
     { \huge \textbf{\thetitle} }\\[1.5 cm]
   }
 
