@@ -205,7 +205,12 @@ with open(sys.argv[1], 'r') as infile:
         if line.startswith('==='):
             outfile.write(replace(preamble, parse(infile, '===')))
 
-        for line in infile:
+        while True:
+            line = infile.readline()
+
+            if not line:
+                break
+
             if line.startswith('###'):
                 outfile.write(replace(subsubsection, {'title': format(line[3:].strip())}))
             elif line.startswith('##'):
