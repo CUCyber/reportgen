@@ -127,8 +127,12 @@ listing_language = r'''\begin{lstlisting}[language=%language%]
 '''
 listing_end = r'''\end{lstlisting}
 '''
-href = r'\\href{\2}{\1}'
-ref = r'\\autoref{\1}'
+href = r'\href{%href%}{%description%}'
+ref = r'\autoref{%ref%}'
+bold = r'\textbf{%text%}'
+italic = r'\textit{%text%}'
+bolditalic = r'\textbf{\textit{%text%}}'
+footnote = r'\footnote{%footnote%}'
 
 postamble = r'''
 
@@ -158,18 +162,28 @@ def parse(infile, delimeter):
     return values
 
 
-def replace(string, values):
+def replace(text, values):
     for var, val in values.items():
-        string = string.replace('%{}%'.format(var), val)
+        text = text.replace('%{}%'.format(var), val)
 
-    return string
+    return text
 
 
-def link(string):
-    string = re.sub(r'\[([^\]]*)\]\(([^)]*)\)', replace(href, {'description': r'\1', 'href': r'\2'}), string)
-    string = re.sub(r'\$([^$]*)\$', replace(ref, {'ref': r'\1'}), string)
+def link(text):
+    text = re.sub(r'\[([^\]]*)\]\(([^)]*)\)', replace(href.replace('\\', '\\\\'), {'description': r'\1', 'href': r'\2'}), text)
 
-    return string
+    text = re.sub(r'\*\*\*([^*]*)\*\*\*', replace(bolditalic.replace('\\', '\\\\'), {'text': r'\1'}), text)
+    text = re.sub(r'\*\*([^*]*)\*\*', replace(bold.replace('\\', '\\\\'), {'text': r'\1'}), text)
+    text = re.sub(r'\*([^*]*)\*', replace(italic.replace('\\', '\\\\'), {'text': r'\1'}), text)
+
+    text = re.sub(r'___([^_]*)___', replace(bolditalic.replace('\\', '\\\\'), {'text': r'\1'}), text)
+    text = re.sub(r'__([^_]*)__', replace(bold.replace('\\', '\\\\'), {'text': r'\1'}), text)
+    text = re.sub(r'_([^_]*)_', replace(italic.replace('\\', '\\\\'), {'text': r'\1'}), text)
+
+    text = re.sub(r'\^([^^]*)\^', replace(footnote.replace('\\', '\\\\'), {'footnote': r'\1'}), text)
+    text = re.sub(r'\$([^$]*)\$', replace(ref.replace('\\', '\\\\'), {'ref': r'\1'}), text)
+
+    return text
 
 
 with open(sys.argv[1], 'r') as infile:
