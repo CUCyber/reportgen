@@ -140,6 +140,35 @@ postamble = r'''
 '''
 
 
+def format(text):
+    text = text.replace(r'{', r'\{')
+    text = text.replace(r'}', r'\}')
+
+    text = re.sub(r'\[([^\]]*)\]\(([^)]*)\)', replace(href.replace('\\', '\\\\'), {'description': r'\1', 'href': r'\2'}), text)
+
+    text = re.sub(r'\*\*\*([^*]*)\*\*\*', replace(bolditalic.replace('\\', '\\\\'), {'text': r'\1'}), text)
+    text = re.sub(r'\*\*([^*]*)\*\*', replace(bold.replace('\\', '\\\\'), {'text': r'\1'}), text)
+    text = re.sub(r'\*([^*]*)\*', replace(italic.replace('\\', '\\\\'), {'text': r'\1'}), text)
+
+    text = re.sub(r'___([^_]*)___', replace(bolditalic.replace('\\', '\\\\'), {'text': r'\1'}), text)
+    text = re.sub(r'__([^_]*)__', replace(bold.replace('\\', '\\\\'), {'text': r'\1'}), text)
+    text = re.sub(r'_([^_]*)_', replace(italic.replace('\\', '\\\\'), {'text': r'\1'}), text)
+
+    text = re.sub(r'(?<!\\)\^([^^]*)[^\\]\^', replace(footnote.replace('\\', '\\\\'), {'footnote': r'\1'}), text)
+    text = re.sub(r'(?<!\\)\$([^$]*)[^\\]\$', replace(ref.replace('\\', '\\\\'), {'ref': r'\1'}), text)
+
+    text = text.replace(r'#', r'\#')
+    text = text.replace(r'$', r'\$')
+    text = text.replace(r'%', r'\%')
+    text = text.replace(r'&', r'\&')
+    text = text.replace(r'_', r'\_')
+    text = text.replace(r'\\', r'\textbackslash{}')
+    text = text.replace(r'^', r'\textasciicircum{}')
+    text = text.replace(r'~', r'\textasciitilde{}')
+
+    return text
+
+
 def parse(infile, delimeter):
     values = {}
 
@@ -151,11 +180,11 @@ def parse(infile, delimeter):
             continue
 
         var, val = line.split('=')
-        values[var] = val.strip()
+        values[var] = format(val.strip())
 
         line = infile.readline()
         while line.startswith(' ') or line.startswith('\t'):
-            values[var] += ' ' + line.strip()
+            values[var] += ' ' + format(line.strip())
 
             line = infile.readline()
 
@@ -169,23 +198,6 @@ def replace(text, values):
     return text
 
 
-def link(text):
-    text = re.sub(r'\[([^\]]*)\]\(([^)]*)\)', replace(href.replace('\\', '\\\\'), {'description': r'\1', 'href': r'\2'}), text)
-
-    text = re.sub(r'\*\*\*([^*]*)\*\*\*', replace(bolditalic.replace('\\', '\\\\'), {'text': r'\1'}), text)
-    text = re.sub(r'\*\*([^*]*)\*\*', replace(bold.replace('\\', '\\\\'), {'text': r'\1'}), text)
-    text = re.sub(r'\*([^*]*)\*', replace(italic.replace('\\', '\\\\'), {'text': r'\1'}), text)
-
-    text = re.sub(r'___([^_]*)___', replace(bolditalic.replace('\\', '\\\\'), {'text': r'\1'}), text)
-    text = re.sub(r'__([^_]*)__', replace(bold.replace('\\', '\\\\'), {'text': r'\1'}), text)
-    text = re.sub(r'_([^_]*)_', replace(italic.replace('\\', '\\\\'), {'text': r'\1'}), text)
-
-    text = re.sub(r'\^([^^]*)\^', replace(footnote.replace('\\', '\\\\'), {'footnote': r'\1'}), text)
-    text = re.sub(r'\$([^$]*)\$', replace(ref.replace('\\', '\\\\'), {'ref': r'\1'}), text)
-
-    return text
-
-
 with open(sys.argv[1], 'r') as infile:
     with open(sys.argv[2], 'w') as outfile:
         line = infile.readline()
@@ -195,11 +207,11 @@ with open(sys.argv[1], 'r') as infile:
 
         for line in infile:
             if line.startswith('###'):
-                outfile.write(link(replace(subsubsection, {'title': line[3:].strip()})))
+                outfile.write(replace(subsubsection, {'title': format(line[3:].strip())}))
             elif line.startswith('##'):
-                outfile.write(link(replace(subsection, {'title': line[2:].strip()})))
+                outfile.write(replace(subsection, {'title': format(line[2:].strip())}))
             elif line.startswith('#'):
-                outfile.write(link(replace(section, {'title': line[1:].strip()})))
+                outfile.write(replace(section, {'title': format(line[1:].strip())}))
             elif line.startswith('---'):
                 values = parse(infile, '---')
 
@@ -212,9 +224,9 @@ with open(sys.argv[1], 'r') as infile:
                 else:
                     values['color'] = 'Black'
 
-                outfile.write(link(replace(vuln, values)))
+                outfile.write(replace(vuln, values))
             elif line.startswith('...'):
-                outfile.write(link(replace(figure, parse(infile, '...'))))
+                outfile.write(replace(figure, parse(infile, '...')))
             elif line.startswith('```'):
                 if len(line) > 4:
                     outfile.write(replace(listing_language, {'language': line[3:-1]}))
@@ -229,7 +241,7 @@ with open(sys.argv[1], 'r') as infile:
 
                 outfile.write(listing_end)
             else:
-                outfile.write(link(line))
+                outfile.write(format(line))
 
 
         outfile.write(postamble)
