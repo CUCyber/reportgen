@@ -8,55 +8,7 @@ if len(sys.argv) != 3:
     sys.exit(1)
 
 
-with open(sys.argv[1], 'r') as infile:
-    with open(sys.argv[2], 'w') as outfile:
-        line = infile.readline()
-
-        if line == '===\n':
-            line = infile.readline()
-
-            while line != '===\n':
-                if not line.strip():
-                    line = infile.readline()
-                    continue
-
-                var, val = line.split('=')
-
-                if var == 'logo':
-                    logo = val.strip()
-                elif var == 'title':
-                    title = val.strip()
-                elif var == 'author':
-                    author = val.strip()
-                elif var == 'date':
-                    date = val.strip()
-                elif var == 'company':
-                    company = val.strip()
-                elif var == 'address1':
-                    address1 = val.strip()
-                elif var == 'address2':
-                    address2 = val.strip()
-
-                line = infile.readline()
-                while line.startswith(' ') or line.startswith('\t'):
-                    if var == 'logo':
-                        logo += ' ' + line.strip()
-                    elif var == 'title':
-                        title += ' ' + line.strip()
-                    elif var == 'author':
-                        author += ' ' + line.strip()
-                    elif var == 'date':
-                        date += ' ' + line.strip()
-                    elif var == 'company':
-                        company += ' ' + line.strip()
-                    elif var == 'address1':
-                        address1 += ' ' + line.strip()
-                    elif var == 'address2':
-                        address2 += ' ' + line.strip()
-
-                    line = infile.readline()
-
-        outfile.write(r'''\documentclass[12pt]{report}
+preamble = r'''\documentclass[12pt]{report}
 \usepackage[english]{babel}
 \usepackage{natbib}
 \usepackage{url}
@@ -75,9 +27,9 @@ with open(sys.argv[1], 'r') as infile:
 \usepackage{listings}
 \setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
 
-\title{''' + title + r'''}
-\author{''' + author + r'''}
-\date{''' + date + r'''}
+\title{%title%}
+\author{%author%}
+\date{%date%}
 
 \makeatletter
 \let\thetitle\@title
@@ -87,7 +39,7 @@ with open(sys.argv[1], 'r') as infile:
 
 \pagestyle{fancy}
 \fancyhf{}
-\lhead{\includegraphics[height=1.5 cm]{''' + logo + r'''}}
+\lhead{\includegraphics[height=1.5 cm]{%logo%}}
 \rhead{\thetitle\text{ - }\theauthor}
 \cfoot{\thepage}
 
@@ -125,7 +77,7 @@ with open(sys.argv[1], 'r') as infile:
 
   {
     \raggedleft
-    { \Large \textbf{''' + company + r'''} }\\[0.5 cm]
+    { \Large \textbf{%company%} }\\[0.5 cm]
     \textsc{\normalsize \thedate}\\[0.5 cm]
   }
 
@@ -133,113 +85,127 @@ with open(sys.argv[1], 'r') as infile:
     \vfill
     \raggedright
     { \large \textbf{\theauthor} }\\[0.5 cm]
-    \textsc{\normalsize ''' + address1 + r'''\\''' + address2 + r'''}\\[2.0 cm]
+    \textsc{\normalsize %address1%\\%address2%}\\[2.0 cm]
   }
 \end{titlepage}
 
 \tableofcontents\thispagestyle{fancy}
 \pagebreak
+'''
 
-''')
+subsubsection = r'''
+\subsubsection{%title%}
+'''
+subsection = r'''
+\subsection{%title%}
+'''
+section = r'''
+\section{%title%}
+'''
+
+vuln = r'''\begin{tabular}{p{3 cm}p{7 cm}}
+  \textbf{Rating:} &
+  \textcolor{%color%}{\textbf{%rating%}} \\[0.5 cm]
+  \textbf{Description:} &
+  %description% \\[0.5 cm]
+  \textbf{Impact:} &
+  %impact% \\[0.5 cm]
+  \textbf{Remediation:} &
+  %remediation% \\[0.5 cm]
+\end{tabular}
+'''
+figure = r'''\begin{figure}[h]
+  \centering
+  \includegraphics[height=3.0 cm]{%graphic%}
+  \caption{%caption%}
+  \label{%label%}
+\end{figure}
+'''
+listing = r'''\begin{lstlisting}
+'''
+listing_language = r'''\begin{lstlisting}[language=%language%]
+'''
+listing_end = r'''\end{lstlisting}
+'''
+href = r'\\href{\2}{\1}'
+ref = r'\\autoref{\1}'
+
+postamble = r'''
+
+\end{document}
+'''
+
+
+def parse(infile, delimeter):
+    values = {}
+
+    line = infile.readline()
+
+    while line[:-1] != delimeter:
+        if not line.strip():
+            line = infile.readline()
+            continue
+
+        var, val = line.split('=')
+        values[var] = val.strip()
+
+        line = infile.readline()
+        while line.startswith(' ') or line.startswith('\t'):
+            values[var] += ' ' + line.strip()
+
+            line = infile.readline()
+
+    return values
+
+
+def replace(string, values):
+    for var, val in values.items():
+        string = string.replace('%{}%'.format(var), val)
+
+    return string
+
+
+def link(string):
+    string = re.sub(r'\[([^\]]*)\]\(([^)]*)\)', replace(href, {'description': r'\1', 'href': r'\2'}), string)
+    string = re.sub(r'\$([^$]*)\$', replace(ref, {'ref': r'\1'}), string)
+
+    return string
+
+
+with open(sys.argv[1], 'r') as infile:
+    with open(sys.argv[2], 'w') as outfile:
+        line = infile.readline()
+
+        if line.startswith('==='):
+            outfile.write(replace(preamble, parse(infile, '===')))
 
         for line in infile:
             if line.startswith('###'):
-              outfile.write(r'''\subsubsection{''' + line[3:].strip() + r'''}
-
-''')
+                outfile.write(link(replace(subsubsection, {'title': line[3:].strip()})))
             elif line.startswith('##'):
-              outfile.write(r'''\subsection{''' + line[2:].strip() + r'''}
-
-''')
+                outfile.write(link(replace(subsection, {'title': line[2:].strip()})))
             elif line.startswith('#'):
-              outfile.write(r'''\section{''' + line[1:].strip() + r'''}
+                outfile.write(link(replace(section, {'title': line[1:].strip()})))
+            elif line.startswith('---'):
+                values = parse(infile, '---')
 
-''')
-            elif line == '---\n':
-                line = infile.readline()
-
-                while line != '---\n':
-                    if not line.strip():
-                        line = infile.readline()
-                        continue
-
-                    var, val = line.split('=')
-
-                    if var == 'rating':
-                        rating = val.strip()
-                    elif var == 'description':
-                        description = val.strip()
-                    elif var == 'impact':
-                        impact = val.strip()
-                    elif var == 'remediation':
-                        remediation = val.strip()
-
-                    line = infile.readline()
-                    while line.startswith(' ') or line.startswith('\t'):
-                        if var == 'rating':
-                            rating += ' ' + line.strip()
-                        elif var == 'description':
-                            description += ' ' + line.strip()
-                        elif var == 'impact':
-                            impact += ' ' + line.strip()
-                        elif var == 'remediation':
-                            remediation += ' ' + line.strip()
-
-                        line = infile.readline()
-
-                outfile.write(r'''\begin{tabular}{p{3 cm}p{7 cm}}
-  \textbf{Rating:} &
-  \textcolor{''' + ('Red' if rating.lower() == 'critical' else 'Orange' if rating.lower() == 'high' else 'Dandelion' if rating.lower() == 'medium' else 'Black') + r'''}{\textbf{''' + rating + r'''}} \\[0.5 cm]
-  \textbf{Description:} &
-  ''' + description + r''' \\[0.5 cm]
-  \textbf{Impact:} &
-  ''' + impact + r''' \\[0.5 cm]
-  \textbf{Remediation:} &
-  ''' + remediation + r''' \\[0.5 cm]
-\end{tabular}
-''')
-            elif line == '...\n':
-                line = infile.readline()
-
-                while line != '...\n':
-                    if not line.strip():
-                        line = infile.readline()
-                        continue
-
-                    var, val = line.split('=')
-
-                    if var == 'graphic':
-                        graphic = val.strip()
-                    elif var == 'caption':
-                        caption = val.strip()
-                    elif var == 'label':
-                        label = val.strip()
-
-                    line = infile.readline()
-                    while line.startswith(' ') or line.startswith('\t'):
-                        if var == 'graphic':
-                            graphic += ' ' + line.strip()
-                        elif var == 'caption':
-                            caption += ' ' + line.strip()
-                        elif var == 'label':
-                            label += ' ' + line.strip()
-
-                        line = infile.readline()
-
-                outfile.write(r'''\begin{figure}[h]
-  \centering
-  \includegraphics[height=3.0 cm]{''' + graphic + r'''}
-  \caption{''' + caption + r'''}
-  \label{''' + label + r'''}
-\end{figure}
-''')
-            elif line.startswith('```'):
-                if len(line) > 3:
-                    outfile.write(r'''\begin{lstlisting}[language=''' + line[3:-1] + r''']
-''')
+                if values['rating'].lower() == 'critical':
+                    values['color'] = 'Red'
+                elif values['rating'].lower() == 'high':
+                    values['color'] = 'Orange'
+                elif values['rating'].lower() == 'medium':
+                    values['color'] = 'Dandelion'
                 else:
-                    outfile.write(r'''\begin{lstlisting}
-''')
+                    values['color'] = 'Black'
+
+                outfile.write(link(replace(vuln, values)))
+            elif line.startswith('...'):
+                outfile.write(link(replace(figure, parse(infile, '...'))))
+            elif line.startswith('```'):
+                if len(line) > 4:
+                    outfile.write(replace(listing_language, {'language': line[3:-1]}))
+                else:
+                    outfile.write(listing)
 
                 line = infile.readline()
 
@@ -247,48 +213,9 @@ with open(sys.argv[1], 'r') as infile:
                     outfile.write(line)
                     line = infile.readline()
 
-                outfile.write(r'''\end{lstlisting}
-''')
-            elif line == '...\n':
-                line = infile.readline()
-
-                while line != '...\n':
-                    if not line.strip():
-                        line = infile.readline()
-                        continue
-
-                    var, val = line.split('=')
-
-                    if var == 'graphic':
-                        graphic = val.strip()
-                    elif var == 'caption':
-                        caption = val.strip()
-                    elif var == 'label':
-                        label = val.strip()
-
-                    line = infile.readline()
-                    while line.startswith(' ') or line.startswith('\t'):
-                        if var == 'graphic':
-                            graphic += ' ' + line.strip()
-                        elif var == 'caption':
-                            caption += ' ' + line.strip()
-                        elif var == 'label':
-                            label += ' ' + line.strip()
-
-                        line = infile.readline()
-
-                outfile.write(r'''\begin{figure}[h]
-  \centering
-  \includegraphics[height=3.0 cm]{''' + graphic + r'''}
-  \caption{''' + caption + r'''}
-  \label{''' + label + r'''}
-\end{figure}
-''')
+                outfile.write(listing_end)
             else:
-                outfile.write(re.sub(r'\$([^$]*)\$', r'\\autoref{\1}', line))
+                outfile.write(link(line))
 
 
-        outfile.write(r'''
-
-\end{document}
-''')
+        outfile.write(postamble)

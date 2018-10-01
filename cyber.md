@@ -56,7 +56,7 @@ remediation=
 ---
 rating=low
 description=
-	asdf
+	[asdf](https://cucyber.net/)
 	asdf
 	asdf
 	asdf
