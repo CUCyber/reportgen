@@ -38,7 +38,7 @@ $ sudo dnf install make git texlive-collection-latexextra latexmk
 ### Arch
 
 ```sh
-$ sudo pacman -S make git texlive-latexextra latex-mk
+$ sudo pacman -S make git texlive-latexextra texlive-bin
 ```
 
 
