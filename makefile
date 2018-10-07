@@ -7,7 +7,7 @@ clean:
 	rm -f *.pdf
 
 open: all
-	which xdg-open && (setsid xdg-open *.pdf &>/dev/null &) || open *.pdf &>/dev/null
+	for file in *.pdf; do which xdg-open >/dev/null 2>&1 && (setsid xdg-open *.pdf >/dev/null 2>&1 &) || open *.pdf >/dev/null 2>&1; done
 
 %.pdf: %.tex
 	latexmk -pdf $^
