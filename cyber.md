@@ -17,9 +17,13 @@ Lorum ipsum...
 # Objectives and Scope
 
 * asdf
+  1. asdf
+  2. asdf
 * fdsa
+  - test
 
 1. ordered
+  * asdf
 2. hello
 2. test
 

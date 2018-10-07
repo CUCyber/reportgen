@@ -116,7 +116,7 @@ vuln = r'''\begin{tabular}{p{4 cm}p{7 cm}}
 '''
 figure = r'''\begin{figure}[h]
   \centering
-  \includegraphics[height=3.0 cm]{%graphic%}
+  \includegraphics[width=6.0 cm]{%graphic%}
   \caption{%caption%}
   \label{%label%}
 \end{figure}
@@ -203,6 +203,50 @@ def parse(infile, delimeter):
     return values
 
 
+def item(infile, line, level):
+    output = []
+    output.append(unordered)
+
+    while line and line[level*2:].startswith('* ') or line[level*2:].startswith('- ') or line[level*2:].startswith('  '):
+        if line[level*2:].startswith('  '):
+            if line[level*2 + 2].isdigit():
+                out, line = enum(infile, line, level + 1)
+                output.append(out)
+            else:
+                out, line = item(infile, line, level + 1)
+                output.append(out)
+        else:
+            output.append(replace(unordered_item, {'item': line[level*2 + 2:-1]}))
+
+            line = infile.readline()
+
+    output.append(unordered_end)
+
+    return ''.join(output), line
+
+
+def enum(infile, line, level):
+    output = []
+    output.append(ordered)
+
+    while line and (line[level*2].isdigit() and line[level*2 + 1:].startswith('. ')) or line[level*2:].startswith('  '):
+        if line[level*2:].startswith('  '):
+            if line[level*2 + 2].isdigit():
+                out, line = enum(infile, line, level + 1)
+                output.append(out)
+            else:
+                out, line = item(infile, line, level + 1)
+                output.append(out)
+        else:
+            output.append(replace(ordered_item, {'item': line[level*2 + 2:-1]}))
+
+            line = infile.readline()
+
+    output.append(ordered_end)
+
+    return ''.join(output), line
+
+
 def replace(text, values):
     for var, val in values.items():
         text = text.replace('%{}%'.format(var), val)
@@ -217,8 +261,13 @@ with open(sys.argv[1], 'r') as infile:
         if line.startswith('==='):
             outfile.write(replace(preamble, parse(infile, '===')))
 
+        read = False
+
         while True:
-            line = infile.readline()
+            if not read:
+                line = infile.readline()
+
+            read = False
 
             if not line:
                 break
@@ -230,21 +279,15 @@ with open(sys.argv[1], 'r') as infile:
             elif line.startswith('#'):
                 outfile.write(replace(section, {'title': format(line[1:].strip())}))
             elif line.startswith('* '):
-                outfile.write(unordered)
+                out, line = item(infile, line, 0)
+                read = True
 
-                while line.startswith('* '):
-                  outfile.write(replace(unordered_item, {'item': line[2:-1]}))
-                  line = infile.readline()
-
-                outfile.write(unordered_end)
+                outfile.write(out)
             elif line[0].isdigit() and line[1:].startswith('. '):
-                outfile.write(ordered)
+                out, line = enum(infile, line, 0)
+                read = True
 
-                while line[0].isdigit() and line[1:].startswith('. '):
-                  outfile.write(replace(ordered_item, {'item': line[2:-1]}))
-                  line = infile.readline()
-
-                outfile.write(ordered_end)
+                outfile.write(out)
             elif line.startswith('---'):
                 values = parse(infile, '---')
 
