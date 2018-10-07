@@ -146,7 +146,7 @@ vuln = r'''\begin{tabular}{p{4 cm}p{7 cm}}
 '''
 figure = r'''\begin{figure}[h]
   \centering
-  \includegraphics[width=6.0 cm]{%graphic%}
+  \includegraphics[width=14.0 cm]{%graphic%}
   \caption{%caption%}
   \label{%label%}
 \end{figure}
