@@ -141,6 +141,7 @@ listing_end = r'''\end{lstlisting}
 '''
 href = r'\href{%href%}{%description%}'
 ref = r'\autoref{%ref%}'
+quote = r"``%text%''"
 bold = r'\textbf{%text%}'
 italic = r'\textit{%text%}'
 bolditalic = r'\textbf{\textit{%text%}}'
@@ -169,6 +170,8 @@ def format(text):
     text = re.sub(r'(?<!\\)\^([^^]*)\^', replace(footnote.replace('\\', '\\\\'), {'footnote': r'\1'}), text)
     text = re.sub(r'(?<!\\)\$([^$]*)\$', replace(ref.replace('\\', '\\\\'), {'ref': r'\1'}), text)
 
+    text = re.sub(r'(?<!\\)"([^"]*)"', replace(quote.replace('\\', '\\\\'), {'text': r'\1'}), text)
+
     text = text.replace(r'#', r'\#')
     text = text.replace(r'$', r'\$')
     text = text.replace(r'%', r'\%')
@@ -192,11 +195,11 @@ def parse(infile, delimeter):
             continue
 
         var, val = line.split('=')
-        values[var] = format(val.strip())
+        values[var] = format(val.strip()) if var != 'logo' and var != 'graphic' else val.strip()
 
         line = infile.readline()
         while line.startswith(' ') or line.startswith('\t'):
-            values[var] += ' ' + format(line.strip())
+            values[var] += ' ' + format(line.strip()) if var != 'logo' and var != 'graphic' else line.strip()
 
             line = infile.readline()
 

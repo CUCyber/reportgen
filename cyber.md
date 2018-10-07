@@ -111,9 +111,9 @@ $ nmap -A
 ```
 
 ...
-graphic=shield.png
+graphic=test_shield.png
 caption=Nmap results
 label=fig:nmap
 ...
 
-In $fig:nmap$, you see that a shell backdoor has been found.
+In $fig:nmap$, you see that a shell backdoor has been found. Also, "asdf asdf".
