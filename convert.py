@@ -25,6 +25,7 @@ preamble = r'''\documentclass[12pt]{report}
 \usepackage{sectsty}
 \usepackage{lipsum}
 \usepackage{listings}
+\usepackage{float}
 \setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
 
 \title{%title%}
@@ -144,7 +145,7 @@ vuln = r'''\begin{tabular}{p{4 cm}p{7 cm}}
   %recommendation% \\[0.5 cm]
 \end{tabular}
 '''
-figure = r'''\begin{figure}[h]
+figure = r'''\begin{figure}[H]
   \centering
   \includegraphics[width=14.0 cm]{%graphic%}
   \caption{%caption%}
