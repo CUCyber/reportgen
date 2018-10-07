@@ -250,7 +250,7 @@ def item(infile, line, level):
                 out, line = item(infile, line, level + 1)
                 output.append(out)
         else:
-            output.append(replace(unordered_item, {'item': line[level*2 + 2:-1]}))
+            output.append(replace(unordered_item, {'item': format(line[level*2 + 2:-1])}))
 
             line = infile.readline()
 
@@ -272,7 +272,7 @@ def enum(infile, line, level):
                 out, line = item(infile, line, level + 1)
                 output.append(out)
         else:
-            output.append(replace(ordered_item, {'item': line[level*2 + 2:-1]}))
+            output.append(replace(ordered_item, {'item': format(line[level*2 + 2:-1])}))
 
             line = infile.readline()
 
