@@ -121,6 +121,18 @@ figure = r'''\begin{figure}[h]
   \label{%label%}
 \end{figure}
 '''
+unordered = r'''\begin{itemize}
+'''
+unordered_item = r'''\item %item%
+'''
+unordered_end =  r'''\end{itemize}
+'''
+ordered = r'''\begin{enumerate}
+'''
+ordered_item = r'''\item %item%
+'''
+ordered_end =  r'''\end{enumerate}
+'''
 listing = r'''\begin{lstlisting}
 '''
 listing_language = r'''\begin{lstlisting}[language=%language%]
@@ -217,6 +229,22 @@ with open(sys.argv[1], 'r') as infile:
                 outfile.write(replace(subsection, {'title': format(line[2:].strip())}))
             elif line.startswith('#'):
                 outfile.write(replace(section, {'title': format(line[1:].strip())}))
+            elif line.startswith('* '):
+                outfile.write(unordered)
+
+                while line.startswith('* '):
+                  outfile.write(replace(unordered_item, {'item': line[2:-1]}))
+                  line = infile.readline()
+
+                outfile.write(unordered_end)
+            elif line[0].isdigit() and line[1:].startswith('. '):
+                outfile.write(ordered)
+
+                while line[0].isdigit() and line[1:].startswith('. '):
+                  outfile.write(replace(ordered_item, {'item': line[2:-1]}))
+                  line = infile.readline()
+
+                outfile.write(ordered_end)
             elif line.startswith('---'):
                 values = parse(infile, '---')
 

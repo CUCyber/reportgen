@@ -16,6 +16,13 @@ Lorum ipsum...
 
 # Objectives and Scope
 
+* asdf
+* fdsa
+
+1. ordered
+2. hello
+2. test
+
 # Impact Summary
 
 # Identified Strengths
