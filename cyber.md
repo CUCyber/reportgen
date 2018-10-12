@@ -116,4 +116,4 @@ caption=Nmap results
 label=fig:nmap
 ...
 
-In $fig:nmap$, you see that a shell backdoor has been found. Also, "asdf asdf".
+In $fig:nmap$, you see that a shell backdoor has been found. Also, "asdf" 'asdf'.

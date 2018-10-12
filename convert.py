@@ -173,6 +173,7 @@ listing_end = r'''\end{lstlisting}
 href = r'\href{%href%}{%description%}'
 ref = r'\autoref{%ref%}'
 quote = r"``%text%''"
+single = r"`%text%'"
 bold = r'\textbf{%text%}'
 italic = r'\textit{%text%}'
 bolditalic = r'\textbf{\textit{%text%}}'
@@ -201,6 +202,7 @@ def format(text):
     text = re.sub(r'(?<!\\)\^([^^]*)\^', replace(footnote.replace('\\', '\\\\'), {'footnote': r'\1'}), text)
     text = re.sub(r'(?<!\\)\$([^$]*)\$', replace(ref.replace('\\', '\\\\'), {'ref': r'\1'}), text)
 
+    text = re.sub(r"(?<!\\)'([^']*)'", replace(single.replace('\\', '\\\\'), {'text': r'\1'}), text)
     text = re.sub(r'(?<!\\)"([^"]*)"', replace(quote.replace('\\', '\\\\'), {'text': r'\1'}), text)
 
     text = text.replace(r'#', r'\#')
