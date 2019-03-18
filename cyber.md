@@ -8,6 +8,9 @@ address1=Address
 address2=Address2
 
 company=Wheelz
+
+footer=
+	Sensitive: The information in this document is not to be disclosed outside of [company] or [author] without prior written consent of both organizations.
 ===
 
 # Executive Summary

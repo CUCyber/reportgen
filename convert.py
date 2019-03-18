@@ -118,6 +118,12 @@ preamble = r'''\documentclass[12pt]{report}
     { \large \textbf{\theauthor} }\\[0.5 cm]
     \textsc{\normalsize %address1%\\%address2%}\\[2.0 cm]
   }
+
+  {
+    \begin{center}
+      \textsc{\textbf{%footer%}}
+    \end{center}
+  }
 \end{titlepage}
 
 \tableofcontents\thispagestyle{fancy}
@@ -232,7 +238,10 @@ def parse(infile, delimeter):
 
         line = infile.readline()
         while line.startswith(' ') or line.startswith('\t'):
-            values[var] += ' ' + format(line.strip()) if var != 'logo' and var != 'graphic' else line.strip()
+            if values[var]:
+                values[var] += ' '
+
+            values[var] += format(line.strip()) if var != 'logo' and var != 'graphic' else line.strip()
 
             line = infile.readline()
 
@@ -283,9 +292,9 @@ def enum(infile, line, level):
     return ''.join(output), line
 
 
-def replace(text, values):
+def replace(text, values, left='%', right='%'):
     for var, val in values.items():
-        text = text.replace('%{}%'.format(var), val)
+        text = text.replace('{}{}{}'.format(left, var, right), replace(val, values, '[', ']') if left == '%' and right == '%' else val)
 
     return text
 
