@@ -20,7 +20,7 @@ preamble = r'''\documentclass[12pt]{report}
 \usepackage{parskip}
 \usepackage{fancyhdr}
 \usepackage{vmargin}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage[usenames,dvipsnames]{xcolor}
 \usepackage{sectsty}
 \usepackage{lipsum}
