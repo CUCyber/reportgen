@@ -7,7 +7,7 @@ clean:
 	rm -f *.pdf
 
 open: all
-	for file in *.pdf; do which xdg-open >/dev/null 2>&1 && (setsid xdg-open *.pdf >/dev/null 2>&1 &) || open *.pdf >/dev/null 2>&1; done
+	find * -type f -name '*.pdf' -exec sh -c 'which xdg-open >/dev/null 2>&1 && (setsid xdg-open {} >/dev/null 2>&1 &) || open {} >/dev/null 2>&1' ';'
 
 %.pdf: %.tex
 	latexmk -pdf $^
