@@ -121,7 +121,7 @@ preamble = r'''\documentclass[12pt]{report}
 
   {
     \begin{center}
-      \textsc{\textbf{%footer%}}
+      \textbf{%footer%}
     \end{center}
   }
 \end{titlepage}
