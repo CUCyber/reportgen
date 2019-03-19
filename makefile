@@ -3,15 +3,14 @@ PDF!=find * -type f -a -not \( -name 'LICENSE.md' -o -name 'README.md' \) -name 
 all: $(PDF)
 
 clean:
-	rm -f *.tex
-	rm -f *.pdf
+	find * -type f -name '*.tex' -exec rm -f '{}' ';'
+	find * -type f -name '*.pdf' -exec rm -f '{}' ';'
 
 open: all
 	find * -type f -name '*.pdf' -exec sh -c 'which xdg-open >/dev/null 2>&1 && (setsid xdg-open {} >/dev/null 2>&1 &) || open {} >/dev/null 2>&1' ';'
 
 %.pdf: %.tex
-	latexmk -pdf $^
-	latexmk -c $^
+	sh -c 'cd `dirname $^` && latexmk -pdf `basename $^` && latexmk -c `basename $^`'
 
 %.tex: %.md
 	./convert.py $^ $@
