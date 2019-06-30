@@ -74,7 +74,7 @@ description=
 	***asdf***
 	_asdf_
 impact=
-	__asdf__
+	__as\_df__
 recommendation=
 	___asdf___
 ---
@@ -85,7 +85,7 @@ description=
 	[asdf](https://cucyber.net/)
 	asdf & asdf
 	asdf
-	asdf
+	`{"asdf": [[[[[...`
 impact=
 	asdf
 recommendation=

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import collections
 import re
 import sys
 
@@ -26,6 +27,7 @@ preamble = r'''\documentclass[12pt]{report}
 \usepackage{lipsum}
 \usepackage{listings}
 \usepackage{float}
+\usepackage{realboxes}
 \setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
 
 \title{%title%}
@@ -103,7 +105,7 @@ preamble = r'''\documentclass[12pt]{report}
     \centering
     \vspace*{0.5 cm}
     \includegraphics[width=5.0 cm]{%logo%}\\[1.0 cm]
-    { \huge \textbf{\thetitle} }\\[1.5 cm]
+    { \huge \textbf{\thetitle} }\\%subtitle%[1.5 cm]
   }
 
   {
@@ -115,19 +117,29 @@ preamble = r'''\documentclass[12pt]{report}
   {
     \vfill
     \raggedright
-    { \large \textbf{\theauthor} }\\[0.5 cm]
+    { \large \textbf{\theauthor} }\\[0.5 cm]%address%
+  }%footer%
+\end{titlepage}
+
+\tableofcontents\thispagestyle{fancy}
+\pagebreak
+'''
+
+subtitle = r'''[0.5 cm]
+    { \Large \textbf{%subtitle%} }\\
+'''
+
+address = r'''
     \textsc{\normalsize %address1%\\%address2%}\\[2.0 cm]
-  }
+'''
+
+footer = r'''
 
   {
     \begin{center}
       \textbf{%footer%}
     \end{center}
   }
-\end{titlepage}
-
-\tableofcontents\thispagestyle{fancy}
-\pagebreak
 '''
 
 subsubsection = r'''
@@ -140,7 +152,7 @@ section = r'''
 \section{%title%}
 '''
 
-vuln = r'''\begin{tabular}{p{4 cm}p{7 cm}}
+vuln = r'''\begin{tabular}{p{4 cm}p{9 cm}}
   \textbf{Rating:} &
   \textcolor{%color%}{\textbf{%rating%}} \\[0.5 cm]
   \textbf{Description:} &
@@ -176,6 +188,7 @@ listing_language = r'''\begin{lstlisting}[language=%language%]
 '''
 listing_end = r'''\end{lstlisting}
 '''
+inline = r'''\Colorbox{lightgray}{\lstinline$%code%$}'''
 href = r'\href{%href%}{%description%}'
 ref = r'\autoref{%ref%}'
 quote = r"``%text%''"
@@ -190,37 +203,72 @@ postamble = r'''
 \end{document}
 '''
 
+tokens = collections.OrderedDict()
+tokens['inline'] = r'(?<!\\)`([^`]*)`'
+tokens['href'] = r'\[([^\]]*)\]\(([^)]*)\)'
+tokens['bolditalic'] = r'\*\*\*((?:\\*|[^*])*)\*\*\*|___((?:\\_|[^_])*)___'
+tokens['bold'] = r'\*\*((?:\\*|[^*])*)\*\*|__((?:\\_|[^_])*)__'
+tokens['italic'] = r'\*((?:\\*|[^*])*)\*|_((?:\\_|[^_])*)_'
+tokens['footnote'] = r'(?<!\\)\^((?:\\\^|[^^])*)\^'
+tokens['ref'] = r'(?<!\\)\$((?:\\\$|[^$])*)\$'
+tokens['single'] = r"(?<!\\)'((?:\\'|[^'])*)'"
+tokens['quote'] = r'(?<!\\)"((?:\\"|[^"])*)"'
+tokens['text'] = r'.+?'
+tokenizer = r'|'.join(r'(?P<{}>{})'.format(key, value) for key, value in tokens.items())
 
-def format(text):
+
+def escape(text):
     text = text.replace(r'{', r'\{')
     text = text.replace(r'}', r'\}')
-
-    text = re.sub(r'\[([^\]]*)\]\(([^)]*)\)', replace(href.replace('\\', '\\\\'), {'description': r'\1', 'href': r'\2'}), text)
-
-    text = re.sub(r'\*\*\*([^*]*)\*\*\*', replace(bolditalic.replace('\\', '\\\\'), {'text': r'\1'}), text)
-    text = re.sub(r'\*\*([^*]*)\*\*', replace(bold.replace('\\', '\\\\'), {'text': r'\1'}), text)
-    text = re.sub(r'\*([^*]*)\*', replace(italic.replace('\\', '\\\\'), {'text': r'\1'}), text)
-
-    text = re.sub(r'___([^_]*)___', replace(bolditalic.replace('\\', '\\\\'), {'text': r'\1'}), text)
-    text = re.sub(r'__([^_]*)__', replace(bold.replace('\\', '\\\\'), {'text': r'\1'}), text)
-    text = re.sub(r'_([^_]*)_', replace(italic.replace('\\', '\\\\'), {'text': r'\1'}), text)
-
-    text = re.sub(r'(?<!\\)\^([^^]*)\^', replace(footnote.replace('\\', '\\\\'), {'footnote': r'\1'}), text)
-    text = re.sub(r'(?<!\\)\$([^$]*)\$', replace(ref.replace('\\', '\\\\'), {'ref': r'\1'}), text)
-
-    text = re.sub(r"(?<!\\)'([^']*)'", replace(single.replace('\\', '\\\\'), {'text': r'\1'}), text)
-    text = re.sub(r'(?<!\\)"([^"]*)"', replace(quote.replace('\\', '\\\\'), {'text': r'\1'}), text)
-
     text = text.replace(r'#', r'\#')
     text = text.replace(r'$', r'\$')
     text = text.replace(r'%', r'\%')
     text = text.replace(r'&', r'\&')
-    text = text.replace(r'_', r'\_')
     text = text.replace(r'\\', r'\textbackslash{}')
-    text = text.replace(r'^', r'\textasciicircum{}')
+    text = text.replace(r'\^', r'\textasciicircum{}')
     text = text.replace(r'~', r'\textasciitilde{}')
 
     return text
+
+
+def format(text):
+    formatted = []
+
+    def helper(text):
+      for match in re.finditer(tokenizer, text):
+	  if match.lastgroup == 'inline':
+	      nested = re.match(tokens['inline'], match.group())
+	      yield replace(inline, {'code': nested.group(1)})
+	  elif match.lastgroup == 'href':
+	      nested = re.match(tokens['href'], match.group())
+	      yield replace(href, {'description': escape(nested.group(1)), 'href': nested.group(2)})
+	  elif match.lastgroup == 'bolditalic':
+	      nested = re.match(tokens['bolditalic'], match.group())
+	      yield replace(bolditalic, {'text': escape(nested.group(1) or nested.group(2))})
+	  elif match.lastgroup == 'bold':
+	      nested = re.match(tokens['bold'], match.group())
+	      yield replace(bold, {'text': escape(nested.group(1) or nested.group(2))})
+	  elif match.lastgroup == 'italic':
+	      nested = re.match(tokens['italic'], match.group())
+	      yield replace(italic, {'text': escape(nested.group(1) or nested.group(2))})
+	  elif match.lastgroup == 'footnote':
+	      nested = re.match(tokens['footnote'], match.group())
+	      yield replace(footnote, {'footnote': escape(nested.group(1))})
+	  elif match.lastgroup == 'ref':
+	      nested = re.match(tokens['ref'], match.group())
+	      yield replace(ref, {'ref': escape(nested.group(1))})
+	  elif match.lastgroup == 'single':
+	      nested = re.match(tokens['single'], match.group())
+	      yield replace(single, {'text': escape(nested.group(1))})
+	  elif match.lastgroup == 'quote':
+	      nested = re.match(tokens['quote'], match.group())
+	      yield replace(quote, {'text': escape(nested.group(1))})
+	  elif match.lastgroup == 'text':
+	      yield escape(match.group())
+	  else:
+	      raise RuntimeError('Unknown format match group "{}"'.format(match.lastgroup))
+
+    return ''.join(helper(text))
 
 
 def parse(infile, delimeter):
@@ -304,7 +352,26 @@ with open(sys.argv[1], 'r') as infile:
         line = infile.readline()
 
         if line.startswith('==='):
-            outfile.write(replace(preamble, parse(infile, '===')))
+	    values = parse(infile, '===')
+
+	    if 'subtitle' in values:
+		subtitle = replace(subtitle, {'subtitle': values.pop('subtitle')})
+	    else:
+		subtitle = ''
+
+	    if 'address1' in values:
+		address = replace(address, {'address1': values.pop('address1'), 'address2': values.pop('address2')})
+	    else:
+		address = ''
+
+	    if 'footer' in values:
+		footer = replace(footer, {'footer': values.pop('footer')})
+	    else:
+		footer = ''
+
+	    values.update({'subtitle': subtitle, 'address': address, 'footer': footer})
+
+	    outfile.write(replace(preamble, values))
 
         read = False
 
@@ -361,6 +428,8 @@ with open(sys.argv[1], 'r') as infile:
                     line = infile.readline()
 
                 outfile.write(listing_end)
+	    elif line.strip() == '':
+		outfile.write('\n')
             else:
                 outfile.write(format(line))
 
