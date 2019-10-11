@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 import collections
+import logging
 import re
 import sys
 
 
-if len(sys.argv) != 3:
-    sys.stderr.write('Usage: {} <input.md> <output.tex>\n'.format(sys.argv[0]))
-    sys.exit(1)
+logger = logging.getLogger('reportgen.convert')
 
 
 preamble = r'''\documentclass[12pt]{report}
@@ -126,12 +125,10 @@ preamble = r'''\documentclass[12pt]{report}
 '''
 
 subtitle = r'''[0.5 cm]
-    { \Large \textbf{%subtitle%} }\\
-'''
+    { \Large \textbf{%subtitle%} }\\'''
 
 address = r'''
-    \textsc{\normalsize %address1%\\%address2%}\\[2.0 cm]
-'''
+    \textsc{\normalsize %address1%\\%address2%}\\[2.0 cm]'''
 
 footer = r'''
 
@@ -139,8 +136,7 @@ footer = r'''
     \begin{center}
       \textbf{%footer%}
     \end{center}
-  }
-'''
+  }'''
 
 subsubsection = r'''
 \subsubsection{%title%}
@@ -174,13 +170,13 @@ unordered = r'''\begin{itemize}
 '''
 unordered_item = r'''\item %item%
 '''
-unordered_end =  r'''\end{itemize}
+unordered_end = r'''\end{itemize}
 '''
 ordered = r'''\begin{enumerate}
 '''
 ordered_item = r'''\item %item%
 '''
-ordered_end =  r'''\end{enumerate}
+ordered_end = r'''\end{enumerate}
 '''
 listing = r'''\begin{lstlisting}
 '''
@@ -232,46 +228,45 @@ def escape(text):
 
 
 def format(text):
-    formatted = []
-
     def helper(text):
-      for match in re.finditer(tokenizer, text):
-	  if match.lastgroup == 'inline':
-	      nested = re.match(tokens['inline'], match.group())
-	      yield replace(inline, {'code': nested.group(1)})
-	  elif match.lastgroup == 'href':
-	      nested = re.match(tokens['href'], match.group())
-	      yield replace(href, {'description': escape(nested.group(1)), 'href': nested.group(2)})
-	  elif match.lastgroup == 'bolditalic':
-	      nested = re.match(tokens['bolditalic'], match.group())
-	      yield replace(bolditalic, {'text': escape(nested.group(1) or nested.group(2))})
-	  elif match.lastgroup == 'bold':
-	      nested = re.match(tokens['bold'], match.group())
-	      yield replace(bold, {'text': escape(nested.group(1) or nested.group(2))})
-	  elif match.lastgroup == 'italic':
-	      nested = re.match(tokens['italic'], match.group())
-	      yield replace(italic, {'text': escape(nested.group(1) or nested.group(2))})
-	  elif match.lastgroup == 'footnote':
-	      nested = re.match(tokens['footnote'], match.group())
-	      yield replace(footnote, {'footnote': escape(nested.group(1))})
-	  elif match.lastgroup == 'ref':
-	      nested = re.match(tokens['ref'], match.group())
-	      yield replace(ref, {'ref': escape(nested.group(1))})
-	  elif match.lastgroup == 'single':
-	      nested = re.match(tokens['single'], match.group())
-	      yield replace(single, {'text': escape(nested.group(1))})
-	  elif match.lastgroup == 'quote':
-	      nested = re.match(tokens['quote'], match.group())
-	      yield replace(quote, {'text': escape(nested.group(1))})
-	  elif match.lastgroup == 'text':
-	      yield escape(match.group())
-	  else:
-	      raise RuntimeError('Unknown format match group "{}"'.format(match.lastgroup))
+        for match in re.finditer(tokenizer, text):
+            if match.lastgroup == 'inline':
+                nested = re.match(tokens['inline'], match.group())
+                yield replace(inline, {'code': nested.group(1)})
+            elif match.lastgroup == 'href':
+                nested = re.match(tokens['href'], match.group())
+                yield replace(href, {'description': escape(nested.group(1)), 'href': nested.group(2)})
+            elif match.lastgroup == 'bolditalic':
+                nested = re.match(tokens['bolditalic'], match.group())
+                yield replace(bolditalic, {'text': escape(nested.group(1) or nested.group(2))})
+            elif match.lastgroup == 'bold':
+                nested = re.match(tokens['bold'], match.group())
+                yield replace(bold, {'text': escape(nested.group(1) or nested.group(2))})
+            elif match.lastgroup == 'italic':
+                nested = re.match(tokens['italic'], match.group())
+                yield replace(italic, {'text': escape(nested.group(1) or nested.group(2))})
+            elif match.lastgroup == 'footnote':
+                nested = re.match(tokens['footnote'], match.group())
+                yield replace(footnote, {'footnote': escape(nested.group(1))})
+            elif match.lastgroup == 'ref':
+                nested = re.match(tokens['ref'], match.group())
+                yield replace(ref, {'ref': escape(nested.group(1))})
+            elif match.lastgroup == 'single':
+                nested = re.match(tokens['single'], match.group())
+                yield replace(single, {'text': escape(nested.group(1))})
+            elif match.lastgroup == 'quote':
+                nested = re.match(tokens['quote'], match.group())
+                yield replace(quote, {'text': escape(nested.group(1))})
+            elif match.lastgroup == 'text':
+                yield escape(match.group())
+            else:
+                logger.error('unknown format match group "{}"'.format(match.lastgroup))
+                raise RuntimeError('Unknown format match group "{}"'.format(match.lastgroup))
 
     return ''.join(helper(text))
 
 
-def parse(infile, delimeter):
+def parse(infile, delimeter='```', noformat=['logo', 'graphic']):
     values = {}
 
     line = infile.readline()
@@ -282,14 +277,14 @@ def parse(infile, delimeter):
             continue
 
         var, val = line.split('=')
-        values[var] = format(val.strip()) if var != 'logo' and var != 'graphic' else val.strip()
+        values[var] = format(val.strip()) if var not in noformat else val.strip()
 
         line = infile.readline()
         while line.startswith(' ') or line.startswith('\t'):
             if values[var]:
                 values[var] += ' '
 
-            values[var] += format(line.strip()) if var != 'logo' and var != 'graphic' else line.strip()
+            values[var] += format(line.strip()) if var not in noformat else line.strip()
 
             line = infile.readline()
 
@@ -347,91 +342,207 @@ def replace(text, values, left='%', right='%'):
     return text
 
 
-with open(sys.argv[1], 'r') as infile:
-    with open(sys.argv[2], 'w') as outfile:
+def convert(infile, outfile):
+    line = infile.readline()
+
+    while line.strip() == '':
         line = infile.readline()
 
-        if line.startswith('==='):
-	    values = parse(infile, '===')
+    if line.startswith('```title'):
+        values = parse(infile)
 
-	    if 'subtitle' in values:
-		subtitle = replace(subtitle, {'subtitle': values.pop('subtitle')})
-	    else:
-		subtitle = ''
+        if 'subtitle' in values:
+            values['subtitle'] = replace(subtitle, {'subtitle': values.pop('subtitle')})
+        else:
+            values['subtitle'] = ''
 
-	    if 'address1' in values:
-		address = replace(address, {'address1': values.pop('address1'), 'address2': values.pop('address2')})
-	    else:
-		address = ''
+        if 'address1' in values:
+            values['address'] = replace(address, {'address1': values.pop('address1'), 'address2': values.pop('address2')})
+        else:
+            values['address'] = ''
 
-	    if 'footer' in values:
-		footer = replace(footer, {'footer': values.pop('footer')})
-	    else:
-		footer = ''
+        if 'footer' in values:
+            values['footer'] = replace(footer, {'footer': values.pop('footer')})
+        else:
+            values['footer'] = ''
 
-	    values.update({'subtitle': subtitle, 'address': address, 'footer': footer})
+        outfile.write(replace(preamble, values))
+    else:
+        logger.error('title block must be at start of file')
+        raise RuntimeError('Title block must be at start of file')
 
-	    outfile.write(replace(preamble, values))
+    read = False
+
+    while True:
+        if not read:
+            line = infile.readline()
 
         read = False
 
-        while True:
-            if not read:
-                line = infile.readline()
+        if not line:
+            break
 
-            read = False
+        if line.startswith('###'):
+            outfile.write(replace(subsubsection, {'title': format(line[3:].strip())}))
+        elif line.startswith('##'):
+            outfile.write(replace(subsection, {'title': format(line[2:].strip())}))
+        elif line.startswith('#'):
+            outfile.write(replace(section, {'title': format(line[1:].strip())}))
+        elif line.startswith('* '):
+            out, line = item(infile, line, 0)
+            read = True
 
-            if not line:
-                break
+            outfile.write(out)
+        elif line[0].isdigit() and line[1:].startswith('. '):
+            out, line = enum(infile, line, 0)
+            read = True
 
-            if line.startswith('###'):
-                outfile.write(replace(subsubsection, {'title': format(line[3:].strip())}))
-            elif line.startswith('##'):
-                outfile.write(replace(subsection, {'title': format(line[2:].strip())}))
-            elif line.startswith('#'):
-                outfile.write(replace(section, {'title': format(line[1:].strip())}))
-            elif line.startswith('* '):
-                out, line = item(infile, line, 0)
-                read = True
+            outfile.write(out)
+        elif line.startswith('```vuln'):
+            values = parse(infile)
 
-                outfile.write(out)
-            elif line[0].isdigit() and line[1:].startswith('. '):
-                out, line = enum(infile, line, 0)
-                read = True
-
-                outfile.write(out)
-            elif line.startswith('---'):
-                values = parse(infile, '---')
-
-                if values['rating'].lower() == 'critical':
-                    values['color'] = 'Red'
-                elif values['rating'].lower() == 'high':
-                    values['color'] = 'Orange'
-                elif values['rating'].lower() == 'medium':
-                    values['color'] = 'Dandelion'
-                else:
-                    values['color'] = 'Black'
-
-                outfile.write(replace(vuln, values))
-            elif line.startswith('...'):
-                outfile.write(replace(figure, parse(infile, '...')))
-            elif line.startswith('```'):
-                if len(line) > 4:
-                    outfile.write(replace(listing_language, {'language': line[3:-1]}))
-                else:
-                    outfile.write(listing)
-
-                line = infile.readline()
-
-                while line != '```\n':
-                    outfile.write(line)
-                    line = infile.readline()
-
-                outfile.write(listing_end)
-	    elif line.strip() == '':
-		outfile.write('\n')
+            if values['rating'].lower() == 'critical':
+                values['color'] = 'Red'
+            elif values['rating'].lower() == 'high':
+                values['color'] = 'Orange'
+            elif values['rating'].lower() == 'medium':
+                values['color'] = 'Dandelion'
             else:
-                outfile.write(format(line))
+                values['color'] = 'Black'
+
+            outfile.write(replace(vuln, values))
+        elif line.startswith('```figure'):
+            outfile.write(replace(figure, parse(infile)))
+        elif line.startswith('```'):
+            if len(line) > 4:
+                outfile.write(replace(listing_language, {'language': line[3:-1]}))
+            else:
+                outfile.write(listing)
+
+            line = infile.readline()
+
+            while line != '```\n':
+                outfile.write(line)
+                line = infile.readline()
+
+            outfile.write(listing_end)
+        elif line.strip() == '':
+            outfile.write('\n')
+        else:
+            outfile.write(format(line))
+
+    outfile.write(postamble)
 
 
-        outfile.write(postamble)
+def convertv1(infile, outfile):
+    line = infile.readline()
+
+    if line.startswith('==='):
+        values = parse(infile, '===')
+
+        if 'subtitle' in values:
+            values['subtitle'] = replace(subtitle, {'subtitle': values.pop('subtitle')})
+        else:
+            values['subtitle'] = ''
+
+        if 'address1' in values:
+            values['address'] = replace(address, {'address1': values.pop('address1'), 'address2': values.pop('address2')})
+        else:
+            values['address'] = ''
+
+        if 'footer' in values:
+            values['footer'] = replace(footer, {'footer': values.pop('footer')})
+        else:
+            values['footer'] = ''
+
+        outfile.write(replace(preamble, values))
+    else:
+        logger.error('title block must be at start of file')
+        raise RuntimeError('Title block must be at start of file')
+
+    read = False
+
+    while True:
+        if not read:
+            line = infile.readline()
+
+        read = False
+
+        if not line:
+            break
+
+        if line.startswith('###'):
+            outfile.write(replace(subsubsection, {'title': format(line[3:].strip())}))
+        elif line.startswith('##'):
+            outfile.write(replace(subsection, {'title': format(line[2:].strip())}))
+        elif line.startswith('#'):
+            outfile.write(replace(section, {'title': format(line[1:].strip())}))
+        elif line.startswith('* '):
+            out, line = item(infile, line, 0)
+            read = True
+
+            outfile.write(out)
+        elif line[0].isdigit() and line[1:].startswith('. '):
+            out, line = enum(infile, line, 0)
+            read = True
+
+            outfile.write(out)
+        elif line.startswith('---'):
+            values = parse(infile, '---')
+
+            if values['rating'].lower() == 'critical':
+                values['color'] = 'Red'
+            elif values['rating'].lower() == 'high':
+                values['color'] = 'Orange'
+            elif values['rating'].lower() == 'medium':
+                values['color'] = 'Dandelion'
+            else:
+                values['color'] = 'Black'
+
+            outfile.write(replace(vuln, values))
+        elif line.startswith('...'):
+            outfile.write(replace(figure, parse(infile, '...')))
+        elif line.startswith('```'):
+            if len(line) > 4:
+                outfile.write(replace(listing_language, {'language': line[3:-1]}))
+            else:
+                outfile.write(listing)
+
+            line = infile.readline()
+
+            while line != '```\n':
+                outfile.write(line)
+                line = infile.readline()
+
+            outfile.write(listing_end)
+        elif line.strip() == '':
+            outfile.write('\n')
+        else:
+            outfile.write(format(line))
+
+    outfile.write(postamble)
+
+
+def main():
+    if len(sys.argv) != 3:
+        sys.stderr.write('Usage: {} <input.md> <output.tex>\n'.format(sys.argv[0]))
+        sys.exit(1)
+
+    logging.basicConfig()
+
+    with open(sys.argv[1], 'r') as infile:
+        with open(sys.argv[2], 'w') as outfile:
+            first = infile.readline()
+            infile.seek(0)
+
+            try:
+                if first.startswith('==='):
+                    convertv1(infile, outfile)
+                else:
+                    convert(infile, outfile)
+            except RuntimeError:
+                sys.exit(2)
+
+
+if __name__ == '__main__':
+    main()

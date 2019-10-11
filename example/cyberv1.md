@@ -1,4 +1,4 @@
-```title
+===
 logo=shield.png
 title=Penetration Test Report
 date=\today
@@ -11,7 +11,7 @@ company=Wheelz
 
 footer=
 	Sensitive: The information in this document is not to be disclosed outside of [company] or [author] without prior written consent of both organizations.
-```
+===
 
 # Executive Summary
 
@@ -40,7 +40,7 @@ Lorum ipsum...
 
 ## Default or Weak Credentials
 
-```vuln
+---
 rating=critical
 description=
 	asdf
@@ -51,9 +51,9 @@ impact=
 	asdf
 recommendation=
 	asdf
-```
+---
 
-```vuln
+---
 rating=high
 description=
 	asdf
@@ -64,9 +64,9 @@ impact=
 	asdf
 recommendation=
 	asdf
-```
+---
 
-```vuln
+---
 rating=medium
 description=
 	*asdf*
@@ -77,9 +77,9 @@ impact=
 	__as\_df__
 recommendation=
 	___asdf___
-```
+---
 
-```vuln
+---
 rating=low
 description=
 	[asdf](https://cucyber.net/)
@@ -90,7 +90,7 @@ impact=
 	asdf
 recommendation=
 	asdf
-```
+---
 
 # Recommendations
 
@@ -113,10 +113,10 @@ int main() {
 $ nmap -A 
 ```
 
-```figure
+...
 graphic=test_shield.png
 caption=Nmap results
 label=fig:nmap
-```
+...
 
 In $fig:nmap$, you see that a shell backdoor has been found. Also, "asdf" 'asdf'.
