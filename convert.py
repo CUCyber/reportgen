@@ -104,7 +104,7 @@ preamble = r'''\documentclass[12pt]{report}
     \centering
     \vspace*{0.5 cm}
     \includegraphics[width=5.0 cm]{%logo%}\\[1.0 cm]
-    { \huge \textbf{\thetitle} }\\%subtitle%[1.5 cm]
+    { \huge \textbf{\thetitle} }%subtitle%\\[1.5 cm]
   }
 
   {
@@ -116,7 +116,7 @@ preamble = r'''\documentclass[12pt]{report}
   {
     \vfill
     \raggedright
-    { \large \textbf{\theauthor} }\\[0.5 cm]%address%
+    { \large \textbf{\theauthor} }%address%\\[2.0 cm]
   }%footer%
 \end{titlepage}
 
@@ -124,11 +124,11 @@ preamble = r'''\documentclass[12pt]{report}
 \pagebreak
 '''
 
-subtitle = r'''[0.5 cm]
-    { \Large \textbf{%subtitle%} }\\'''
+subtitle = r'''\\[0.5 cm]
+    { \Large \textbf{%subtitle%} }'''
 
-address = r'''
-    \textsc{\normalsize %address1%\\%address2%}\\[2.0 cm]'''
+address = r'''\\[0.5 cm]
+    \textsc{\normalsize %address1%\\%address2%}'''
 
 footer = r'''
 
