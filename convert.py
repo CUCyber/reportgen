@@ -27,6 +27,7 @@ preamble = r'''\documentclass[12pt]{report}
 \usepackage{listings}
 \usepackage{float}
 \usepackage{realboxes}
+\usepackage{longtable}
 \setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
 
 \title{%title%}
@@ -143,12 +144,14 @@ subsubsection = r'''
 '''
 subsection = r'''
 \subsection{%title%}
+\label{%label%}
 '''
 section = r'''
 \section{%title%}
+\label{%label%}
 '''
 
-vuln = r'''\begin{tabular}{p{4 cm}p{9 cm}}
+vuln = r'''\begin{longtable}{p{4 cm}p{9 cm}}
   \textbf{Rating:} &
   \textcolor{%color%}{\textbf{%rating%}} \\[0.5 cm]
   \textbf{Description:} &
@@ -157,7 +160,7 @@ vuln = r'''\begin{tabular}{p{4 cm}p{9 cm}}
   %impact% \\[0.5 cm]
   \textbf{Recommendation:} &
   %recommendation% \\[0.5 cm]
-\end{tabular}
+\end{longtable}
 '''
 figure = r'''\begin{figure}[H]
   \centering
@@ -264,6 +267,10 @@ def format(text):
                 raise RuntimeError('Unknown format match group "{}"'.format(match.lastgroup))
 
     return ''.join(helper(text))
+
+
+def slugify(text):
+    return re.sub(r'[^a-z0-9-]', '', text.lower().replace(' ', '-'))
 
 
 def parse(infile, delimeter='```', noformat=['logo', 'graphic']):
@@ -385,9 +392,9 @@ def convert(infile, outfile):
         if line.startswith('###'):
             outfile.write(replace(subsubsection, {'title': format(line[3:].strip())}))
         elif line.startswith('##'):
-            outfile.write(replace(subsection, {'title': format(line[2:].strip())}))
+            outfile.write(replace(subsection, {'title': format(line[2:].strip()), 'label': 'sec:' + slugify(line[2:].strip())}))
         elif line.startswith('#'):
-            outfile.write(replace(section, {'title': format(line[1:].strip())}))
+            outfile.write(replace(section, {'title': format(line[1:].strip()), 'label': 'sec:' + slugify(line[1:].strip())}))
         elif line.startswith('* '):
             out, line = item(infile, line, 0)
             read = True
