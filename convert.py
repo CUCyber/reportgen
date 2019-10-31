@@ -141,6 +141,7 @@ footer = r'''
 
 subsubsection = r'''
 \subsubsection{%title%}
+\label{%label%}
 '''
 subsection = r'''
 \subsection{%title%}
@@ -166,7 +167,7 @@ figure = r'''\begin{figure}[H]
   \centering
   \includegraphics[width=14.0 cm]{%graphic%}
   \caption{%caption%}
-  \label{%label%}
+  \label{fig:%label%}
 \end{figure}
 '''
 unordered = r'''\begin{itemize}
@@ -189,7 +190,8 @@ listing_end = r'''\end{lstlisting}
 '''
 inline = r'''\Colorbox{lightgray}{\lstinline$%code%$}'''
 href = r'\href{%href%}{%description%}'
-ref = r'\autoref{%ref%}'
+numref = r'\autoref{%ref%}'
+nameref = r'\nameref{%ref%}'
 quote = r"``%text%''"
 single = r"`%text%'"
 bold = r'\textbf{%text%}'
@@ -223,6 +225,7 @@ def escape(text):
     text = text.replace(r'$', r'\$')
     text = text.replace(r'%', r'\%')
     text = text.replace(r'&', r'\&')
+    text = text.replace(r'_', r'\_')
     text = text.replace(r'\\', r'\textbackslash{}')
     text = text.replace(r'\^', r'\textasciicircum{}')
     text = text.replace(r'~', r'\textasciitilde{}')
@@ -253,7 +256,11 @@ def format(text):
                 yield replace(footnote, {'footnote': escape(nested.group(1))})
             elif match.lastgroup == 'ref':
                 nested = re.match(tokens['ref'], match.group())
-                yield replace(ref, {'ref': escape(nested.group(1))})
+                label = nested.group(1)
+                if label.startswith('sec:'):
+                    yield replace(nameref, {'ref': escape(label)})
+                else:
+                    yield replace(numref, {'ref': escape(label)})
             elif match.lastgroup == 'single':
                 nested = re.match(tokens['single'], match.group())
                 yield replace(single, {'text': escape(nested.group(1))})
@@ -270,7 +277,7 @@ def format(text):
 
 
 def slugify(text):
-    return re.sub(r'[^a-z0-9-]', '', text.lower().replace(' ', '-'))
+    return re.sub(r'[^a-z0-9-]', '', text.lower().replace(' ', '-').replace('.', '-'))
 
 
 def parse(infile, delimeter='```', noformat=['logo', 'graphic']):
@@ -390,7 +397,7 @@ def convert(infile, outfile):
             break
 
         if line.startswith('###'):
-            outfile.write(replace(subsubsection, {'title': format(line[3:].strip())}))
+            outfile.write(replace(subsubsection, {'title': format(line[3:].strip()), 'label': 'sec:' + slugify(line[3:].strip())}))
         elif line.startswith('##'):
             outfile.write(replace(subsection, {'title': format(line[2:].strip()), 'label': 'sec:' + slugify(line[2:].strip())}))
         elif line.startswith('#'):
