@@ -277,7 +277,7 @@ def format(text):
 
 
 def slugify(text):
-    return re.sub(r'[^a-z0-9-]', '', text.lower().replace(' ', '-').replace('.', '-'))
+    return re.sub('^-+|-+$', '', re.sub('--+', '-', re.sub(r'[^a-z0-9-]', '', text.lower().replace(' ', '-').replace('.', '-'))))
 
 
 def parse(infile, delimeter='```', noformat=['logo', 'graphic']):
