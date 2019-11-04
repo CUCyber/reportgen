@@ -152,6 +152,10 @@ section = r'''
 \label{%label%}
 '''
 
+pagebreak = r'''\pagebreak
+
+'''
+
 vuln = r'''\begin{longtable}{p{4 cm}p{9 cm}}
   \textbf{Rating:} &
   \textcolor{%color%}{\textbf{%rating%}} \\[0.5 cm]
@@ -386,6 +390,7 @@ def convert(infile, outfile):
         raise RuntimeError('Title block must be at start of file')
 
     read = False
+    newlines = 0
 
     while True:
         if not read:
@@ -441,10 +446,17 @@ def convert(infile, outfile):
 
             outfile.write(listing_end)
         elif line.strip() == '':
-            outfile.write('\n')
+            newlines += 1
+            if newlines >= 3:
+                outfile.write(pagebreak)
+            else:
+                outfile.write('\n')
+                continue
         else:
             outfile.write(format(line))
             outfile.write('\n')
+
+        newlines = 0
 
     outfile.write(postamble)
 
