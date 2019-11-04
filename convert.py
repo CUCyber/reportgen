@@ -444,6 +444,7 @@ def convert(infile, outfile):
             outfile.write('\n')
         else:
             outfile.write(format(line))
+            outfile.write('\n')
 
     outfile.write(postamble)
 
@@ -533,6 +534,7 @@ def convertv1(infile, outfile):
             outfile.write('\n')
         else:
             outfile.write(format(line))
+            outfile.write('\n')
 
     outfile.write(postamble)
 
