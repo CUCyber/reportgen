@@ -1,4 +1,5 @@
 ===
+watermark=Example
 logo=shield.png
 title=Penetration Test Report
 date=\today
@@ -72,11 +73,11 @@ description=
 	*asdf*
 	**asdf**
 	***asdf***
-	_asdf_
+	_as\\df_
 impact=
 	__as\_df__
 recommendation=
-	___asdf___
+	___as\^df___
 ---
 
 ---
@@ -116,7 +117,7 @@ $ nmap -A
 ...
 graphic=test_shield.png
 caption=Nmap results
-label=fig:nmap
+label=nmap
 ...
 
 In $fig:nmap$, you see that a shell backdoor has been found. Also, "asdf" 'asdf'.

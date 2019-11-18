@@ -9,6 +9,7 @@ logger = logging.getLogger('reportgen.convert')
 
 
 preamble = r'''\documentclass[12pt]{report}
+\usepackage[letterpaper,left=3 cm,top=2.5 cm,right=3 cm,bottom=2.5 cm,headheight=1.5 cm,headsep=1.5 cm,foot=1 cm,footskip=1.5 cm,includeheadfoot]{geometry}
 \usepackage[english]{babel}
 \usepackage{natbib}
 \usepackage{url}
@@ -19,7 +20,6 @@ preamble = r'''\documentclass[12pt]{report}
 \usepackage{graphicx}
 \usepackage{parskip}
 \usepackage{fancyhdr}
-\usepackage{vmargin}
 \usepackage[hidelinks]{hyperref}
 \usepackage[usenames,dvipsnames]{xcolor}
 \usepackage{sectsty}
@@ -27,8 +27,7 @@ preamble = r'''\documentclass[12pt]{report}
 \usepackage{listings}
 \usepackage{float}
 \usepackage{realboxes}
-\usepackage{longtable}
-\setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
+\usepackage{longtable}%watermark%
 
 \title{%title%}
 \author{%author%}
@@ -109,8 +108,7 @@ preamble = r'''\documentclass[12pt]{report}
   }
 
   {
-    \raggedleft
-    { \Large \textbf{%company%} }\\[0.5 cm]
+    \raggedleft%client%
     \textsc{\normalsize \thedate}\\[0.5 cm]
   }
 
@@ -125,12 +123,19 @@ preamble = r'''\documentclass[12pt]{report}
 \pagebreak
 '''
 
+watermark = r'''
+\usepackage{draftwatermark}
+
+\SetWatermarkText{\textsc{%watermark%}}
+\SetWatermarkScale{3.5}
+\SetWatermarkLightness{0.95}'''
+
 subtitle = r'''\\[0.5 cm]
     { \Large \textbf{%subtitle%} }'''
-
+client = r'''
+    { \Large \textbf{%client%} }\\[0.5 cm]'''
 address = r'''\\[0.5 cm]
     \textsc{\normalsize %address1%\\%address2%}'''
-
 footer = r'''
 
   {
@@ -138,6 +143,14 @@ footer = r'''
       \textbf{%footer%}
     \end{center}
   }'''
+
+preamble_formatted = {
+    'watermark': (watermark, ['watermark']),
+    'subtitle': (subtitle, ['subtitle']),
+    'client': (client, ['client']),
+    'address': (address, ['address1', 'address2']),
+    'footer': (footer, ['footer'])
+}
 
 subsubsection = r'''
 \subsubsection{%title%}
@@ -223,6 +236,8 @@ tokenizer = r'|'.join(r'(?P<{}>{})'.format(key, value) for key, value in tokens.
 
 
 def escape(text):
+    text = text.replace(r'\_', r'_')
+    text = text.replace(r'\^', r'^')
     text = text.replace(r'{', r'\{')
     text = text.replace(r'}', r'\}')
     text = text.replace(r'#', r'\#')
@@ -231,7 +246,7 @@ def escape(text):
     text = text.replace(r'&', r'\&')
     text = text.replace(r'_', r'\_')
     text = text.replace(r'\\', r'\textbackslash{}')
-    text = text.replace(r'\^', r'\textasciicircum{}')
+    text = text.replace(r'^', r'\textasciicircum{}')
     text = text.replace(r'~', r'\textasciitilde{}')
 
     return text
@@ -284,7 +299,7 @@ def slugify(text):
     return re.sub('^-+|-+$', '', re.sub('--+', '-', re.sub(r'[^a-z0-9-]', '', text.lower().replace(' ', '-').replace('.', '-'))))
 
 
-def parse(infile, delimeter='```', noformat=['logo', 'graphic']):
+def parse(infile, delimeter='```', noformat=['logo', 'graphic', 'date']):
     values = {}
 
     line = infile.readline()
@@ -353,9 +368,12 @@ def enum(infile, line, level):
     return ''.join(output), line
 
 
-def replace(text, values, left='%', right='%'):
+def replace(text, values, variables=None, left='%', right='%'):
+    if variables is None:
+        variables = values
+
     for var, val in values.items():
-        text = text.replace('{}{}{}'.format(left, var, right), replace(val, values, '[', ']') if left == '%' and right == '%' else val)
+        text = text.replace('{}{}{}'.format(left, var, right), replace(val, variables, None, '[', ']') if left == '%' and right == '%' else val)
 
     return text
 
@@ -369,22 +387,15 @@ def convert(infile, outfile):
     if line.startswith('```title'):
         values = parse(infile)
 
-        if 'subtitle' in values:
-            values['subtitle'] = replace(subtitle, {'subtitle': values.pop('subtitle')})
-        else:
-            values['subtitle'] = ''
+        rendered = values.copy()
 
-        if 'address1' in values:
-            values['address'] = replace(address, {'address1': values.pop('address1'), 'address2': values.pop('address2')})
-        else:
-            values['address'] = ''
+        for formatted, (text, variables) in preamble_formatted.items():
+          if all(var in rendered for var in variables):
+            rendered[formatted] = replace(text, {var: rendered.pop(var) for var in variables}, values)
+          else:
+            rendered[formatted] = ''
 
-        if 'footer' in values:
-            values['footer'] = replace(footer, {'footer': values.pop('footer')})
-        else:
-            values['footer'] = ''
-
-        outfile.write(replace(preamble, values))
+        outfile.write(replace(preamble, rendered, values))
     else:
         logger.error('title block must be at start of file')
         raise RuntimeError('Title block must be at start of file')
@@ -467,22 +478,15 @@ def convertv1(infile, outfile):
     if line.startswith('==='):
         values = parse(infile, '===')
 
-        if 'subtitle' in values:
-            values['subtitle'] = replace(subtitle, {'subtitle': values.pop('subtitle')})
-        else:
-            values['subtitle'] = ''
+        rendered = values.copy()
 
-        if 'address1' in values:
-            values['address'] = replace(address, {'address1': values.pop('address1'), 'address2': values.pop('address2')})
-        else:
-            values['address'] = ''
+        for formatted, (text, variables) in preamble_formatted.items():
+          if all(var in rendered for var in variables):
+            rendered[formatted] = replace(text, {var: rendered.pop(var) for var in variables}, values)
+          else:
+            rendered[formatted] = ''
 
-        if 'footer' in values:
-            values['footer'] = replace(footer, {'footer': values.pop('footer')})
-        else:
-            values['footer'] = ''
-
-        outfile.write(replace(preamble, values))
+        outfile.write(replace(preamble, rendered, values))
     else:
         logger.error('title block must be at start of file')
         raise RuntimeError('Title block must be at start of file')
@@ -499,11 +503,11 @@ def convertv1(infile, outfile):
             break
 
         if line.startswith('###'):
-            outfile.write(replace(subsubsection, {'title': format(line[3:].strip())}))
+            outfile.write(replace(subsubsection, {'title': format(line[3:].strip()), 'label': 'sec:' + slugify(line[3:].strip())}))
         elif line.startswith('##'):
-            outfile.write(replace(subsection, {'title': format(line[2:].strip())}))
+            outfile.write(replace(subsection, {'title': format(line[2:].strip()), 'label': 'sec:' + slugify(line[2:].strip())}))
         elif line.startswith('#'):
-            outfile.write(replace(section, {'title': format(line[1:].strip())}))
+            outfile.write(replace(section, {'title': format(line[1:].strip()), 'label': 'sec:' + slugify(line[1:].strip())}))
         elif line.startswith('* '):
             out, line = item(infile, line, 0)
             read = True
