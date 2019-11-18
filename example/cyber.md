@@ -8,10 +8,10 @@ author=CU Cyber
 address1=Address
 address2=Address2
 
-company=Wheelz
+client=Wheelz
 
 footer=
-	Sensitive: The information in this document is not to be disclosed outside of [company] or [author] without prior written consent of both organizations.
+	Sensitive: The information in this document is not to be disclosed outside of [client] or [author] without prior written consent of both organizations.
 ```
 
 # Executive Summary
