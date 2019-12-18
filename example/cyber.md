@@ -121,3 +121,7 @@ label=nmap
 ```
 
 In $fig:nmap$, you see that a shell backdoor has been found. Also, "asdf" 'asdf'.
+
+```inline
+This is inline \LaTeX{} code that can use ``quotes'' and math: $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$.
+```

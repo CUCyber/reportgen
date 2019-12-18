@@ -443,6 +443,16 @@ def convert(infile, outfile):
             outfile.write(replace(vuln, values))
         elif line.startswith('```figure'):
             outfile.write(replace(figure, parse(infile)))
+        elif line.startswith('```inline'):
+            outfile.write('% BEGIN INLINE BLOCK %\n')
+
+            line = infile.readline()
+
+            while line != '```\n':
+                outfile.write(line)
+                line = infile.readline()
+
+            outfile.write('% END INLINE BLOCK %\n')
         elif line.startswith('```'):
             if len(line) > 4:
                 outfile.write(replace(listing_language, {'language': line[3:-1]}))
