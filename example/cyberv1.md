@@ -72,7 +72,7 @@ rating=medium
 description=
 	*asdf*
 	**asdf**
-	***asdf***
+	***as~df***
 	_as\\df_
 impact=
 	__as\_df__

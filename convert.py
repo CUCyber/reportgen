@@ -8,7 +8,32 @@ import sys
 logger = logging.getLogger('reportgen.convert')
 
 
-preamble = r'''\documentclass[12pt]{report}
+class safe(str):
+    def __repr__(self):
+        return self.__class__.__name__ + '(' + super().__repr__() + ')'
+
+    def __add__(self, rhs):
+        if not isinstance(rhs, safe):
+            raise RuntimeError('Attempted concatenation of \'safe\' and unsafe strings')
+        s = super().__add__(rhs)
+        return safe(s)
+
+    def join(self, iter, *args, **kwargs):
+        def checkiter(iter):
+            for elem in iter:
+                if not isinstance(elem, safe):
+                    raise RuntimeError('Attempted join on \'safe\' and unsafe strings')
+                yield elem
+        return safe(super().join(checkiter(iter), *args, **kwargs))
+
+    def replace(self, old, new, *args, **kwargs):
+        if not isinstance(new, safe):
+            raise RuntimeError('Attempted replacement of \'safe\' and unsafe strings')
+        s = super().replace(old, new, *args, **kwargs)
+        return safe(s)
+
+
+preamble = safe(r'''\documentclass[12pt]{report}
 \usepackage[letterpaper,left=3 cm,top=2.5 cm,right=3 cm,bottom=2.5 cm,headheight=1.5 cm,headsep=1.5 cm,foot=1 cm,footskip=1.5 cm,includeheadfoot]{geometry}
 \usepackage[english]{babel}
 \usepackage{natbib}
@@ -121,28 +146,28 @@ preamble = r'''\documentclass[12pt]{report}
 
 \tableofcontents\thispagestyle{fancy}
 \pagebreak
-'''
+''')
 
-watermark = r'''
+watermark = safe(r'''
 \usepackage{draftwatermark}
 
 \SetWatermarkText{\textsc{%watermark%}}
 \SetWatermarkScale{3.5}
-\SetWatermarkLightness{0.95}'''
+\SetWatermarkLightness{0.95}''')
 
-subtitle = r'''\\[0.5 cm]
-    { \Large \textbf{%subtitle%} }'''
-client = r'''
-    { \Large \textbf{%client%} }\\[0.5 cm]'''
-address = r'''\\[0.5 cm]
-    \textsc{\normalsize %address1%\\%address2%}'''
-footer = r'''
+subtitle = safe(r'''\\[0.5 cm]
+    { \Large \textbf{%subtitle%} }''')
+client = safe(r'''
+    { \Large \textbf{%client%} }\\[0.5 cm]''')
+address = safe(r'''\\[0.5 cm]
+    \textsc{\normalsize %address1%\\%address2%}''')
+footer = safe(r'''
 
   {
     \begin{center}
       \textbf{%footer%}
     \end{center}
-  }'''
+  }''')
 
 preamble_formatted = {
     'watermark': (watermark, ['watermark']),
@@ -152,24 +177,24 @@ preamble_formatted = {
     'footer': (footer, ['footer'])
 }
 
-subsubsection = r'''
+subsubsection = safe(r'''
 \subsubsection{%title%}
 \label{%label%}
-'''
-subsection = r'''
+''')
+subsection = safe(r'''
 \subsection{%title%}
 \label{%label%}
-'''
-section = r'''
+''')
+section = safe(r'''
 \section{%title%}
 \label{%label%}
-'''
+''')
 
-pagebreak = r'''\pagebreak
+pagebreak = safe(r'''\pagebreak
 
-'''
+''')
 
-vuln = r'''\begin{longtable}{p{4 cm}p{9 cm}}
+vuln = safe(r'''\begin{longtable}{p{4 cm}p{9 cm}}
   \textbf{Rating:} &
   \textcolor{%color%}{\textbf{%rating%}} \\[0.5 cm]
   \textbf{Description:} &
@@ -179,47 +204,47 @@ vuln = r'''\begin{longtable}{p{4 cm}p{9 cm}}
   \textbf{Recommendation:} &
   %recommendation% \\[0.5 cm]
 \end{longtable}
-'''
-figure = r'''\begin{figure}[H]
+''')
+figure = safe(r'''\begin{figure}[H]
   \centering
   \includegraphics[width=14.0 cm]{%graphic%}
   \caption{%caption%}
   \label{fig:%label%}
 \end{figure}
-'''
-unordered = r'''\begin{itemize}
-'''
-unordered_item = r'''\item %item%
-'''
-unordered_end = r'''\end{itemize}
-'''
-ordered = r'''\begin{enumerate}
-'''
-ordered_item = r'''\item %item%
-'''
-ordered_end = r'''\end{enumerate}
-'''
-listing = r'''\begin{lstlisting}
-'''
-listing_language = r'''\begin{lstlisting}[language=%language%]
-'''
-listing_end = r'''\end{lstlisting}
-'''
-inline = r'''\Colorbox{lightgray}{\lstinline$%code%$}'''
-href = r'\href{%href%}{%description%}'
-numref = r'\autoref{%ref%}'
-nameref = r'\nameref{%ref%}'
-quote = r"``%text%''"
-single = r"`%text%'"
-bold = r'\textbf{%text%}'
-italic = r'\textit{%text%}'
-bolditalic = r'\textbf{\textit{%text%}}'
-footnote = r'\footnote{%footnote%}'
+''')
+unordered = safe(r'''\begin{itemize}
+''')
+unordered_item = safe(r'''\item %item%
+''')
+unordered_end = safe(r'''\end{itemize}
+''')
+ordered = safe(r'''\begin{enumerate}
+''')
+ordered_item = safe(r'''\item %item%
+''')
+ordered_end = safe(r'''\end{enumerate}
+''')
+listing = safe(r'''\begin{lstlisting}
+''')
+listing_language = safe(r'''\begin{lstlisting}[language=%language%]
+''')
+listing_end = safe(r'''\end{lstlisting}
+''')
+inline = safe(r'''\Colorbox{lightgray}{\lstinline$%code%$}''')
+href = safe(r'\href{%href%}{%description%}')
+numref = safe(r'\autoref{%ref%}')
+nameref = safe(r'\nameref{%ref%}')
+quote = safe(r"``%text%''")
+single = safe(r"`%text%'")
+bold = safe(r'\textbf{%text%}')
+italic = safe(r'\textit{%text%}')
+bolditalic = safe(r'\textbf{\textit{%text%}}')
+footnote = safe(r'\footnote{%footnote%}')
 
-postamble = r'''
+postamble = safe(r'''
 
 \end{document}
-'''
+''')
 
 tokens = collections.OrderedDict()
 tokens['inline'] = r'(?<!\\)`([^`]*)`'
@@ -234,25 +259,40 @@ tokens['quote'] = r'(?<!\\)"((?:\\"|[^"])*)"'
 tokens['text'] = r'.+?'
 tokenizer = r'|'.join(r'(?P<{}>{})'.format(key, value) for key, value in tokens.items())
 
+symbols = collections.OrderedDict()
+symbols['lbrace'] = (r'{', r'\{')
+symbols['rbrace'] = (r'}', r'\}')
+symbols['hash'] = (r'#', r'\#')
+symbols['dollar'] = (r'\$', r'\$')
+symbols['percent'] = (r'%', r'\%')
+symbols['ampersand'] = (r'&', r'\&')
+symbols['underscore'] = (r'_', r'\_')
+symbols['backslash'] = (r'\\', r'\textbackslash{}')
+symbols['circumflex'] = (r'\^', r'\textasciicircum{}')
+symbols['tilde'] = (r'~', r'\textasciitilde{}')
+symbols['default'] = (r'.+?', None)
+symbolizer = r'|'.join(r'(?P<{}>{})'.format(key, value[0]) for key, value in symbols.items())
+
 
 def escape(text):
-    text = text.replace(r'\_', r'_')
-    text = text.replace(r'\^', r'^')
-    text = text.replace(r'{', r'\{')
-    text = text.replace(r'}', r'\}')
-    text = text.replace(r'#', r'\#')
-    text = text.replace(r'$', r'\$')
-    text = text.replace(r'%', r'\%')
-    text = text.replace(r'&', r'\&')
-    text = text.replace(r'_', r'\_')
-    text = text.replace(r'\\', r'\textbackslash{}')
-    text = text.replace(r'^', r'\textasciicircum{}')
-    text = text.replace(r'~', r'\textasciitilde{}')
+    if isinstance(text, safe):
+      return text
 
-    return text
+    def helper(text):
+        for match in re.finditer(symbolizer, text):
+            escaped = symbols[match.lastgroup][1]
+            if escaped is None:
+                yield safe(match.group())
+            else:
+                yield safe(escaped)
+
+    return safe('').join(helper(text))
 
 
 def format(text):
+    if isinstance(text, safe):
+      return text
+
     def helper(text):
         for match in re.finditer(tokenizer, text):
             if match.lastgroup == 'inline':
@@ -260,39 +300,39 @@ def format(text):
                 yield replace(inline, {'code': nested.group(1)})
             elif match.lastgroup == 'href':
                 nested = re.match(tokens['href'], match.group())
-                yield replace(href, {'description': escape(nested.group(1)), 'href': nested.group(2)})
+                yield replace(href, {'description': nested.group(1), 'href': nested.group(2)})
             elif match.lastgroup == 'bolditalic':
                 nested = re.match(tokens['bolditalic'], match.group())
-                yield replace(bolditalic, {'text': escape(nested.group(1) or nested.group(2))})
+                yield replace(bolditalic, {'text': nested.group(1) or nested.group(2)})
             elif match.lastgroup == 'bold':
                 nested = re.match(tokens['bold'], match.group())
-                yield replace(bold, {'text': escape(nested.group(1) or nested.group(2))})
+                yield replace(bold, {'text': nested.group(1) or nested.group(2)})
             elif match.lastgroup == 'italic':
                 nested = re.match(tokens['italic'], match.group())
-                yield replace(italic, {'text': escape(nested.group(1) or nested.group(2))})
+                yield replace(italic, {'text': nested.group(1) or nested.group(2)})
             elif match.lastgroup == 'footnote':
                 nested = re.match(tokens['footnote'], match.group())
-                yield replace(footnote, {'footnote': escape(nested.group(1))})
+                yield replace(footnote, {'footnote': nested.group(1)})
             elif match.lastgroup == 'ref':
                 nested = re.match(tokens['ref'], match.group())
                 label = nested.group(1)
                 if label.startswith('sec:'):
-                    yield replace(nameref, {'ref': escape(label)})
+                    yield replace(nameref, {'ref': label})
                 else:
-                    yield replace(numref, {'ref': escape(label)})
+                    yield replace(numref, {'ref': label})
             elif match.lastgroup == 'single':
                 nested = re.match(tokens['single'], match.group())
-                yield replace(single, {'text': escape(nested.group(1))})
+                yield replace(single, {'text': nested.group(1)})
             elif match.lastgroup == 'quote':
                 nested = re.match(tokens['quote'], match.group())
-                yield replace(quote, {'text': escape(nested.group(1))})
+                yield replace(quote, {'text': nested.group(1)})
             elif match.lastgroup == 'text':
-                yield escape(match.group())
+                yield match.group()
             else:
                 logger.error('unknown format match group "{}"'.format(match.lastgroup))
                 raise RuntimeError('Unknown format match group "{}"'.format(match.lastgroup))
 
-    return ''.join(helper(text))
+    return safe('').join(formatted if isinstance(formatted, safe) else escape(formatted) for formatted in helper(text))
 
 
 def slugify(text):
@@ -309,15 +349,15 @@ def parse(infile, delimeter='```', noformat=['logo', 'graphic', 'date']):
             line = infile.readline()
             continue
 
-        var, val = line.split('=')
-        values[var] = format(val.strip()) if var not in noformat else val.strip()
+        var, val = (token.strip() for token in line.split('='))
+        values[var] = format(val) if var not in noformat else safe(val)
 
         line = infile.readline()
         while line.startswith(' ') or line.startswith('\t'):
             if values[var]:
-                values[var] += ' '
+                values[var] += safe(' ')
 
-            values[var] += format(line.strip()) if var not in noformat else line.strip()
+            values[var] += format(line.strip()) if var not in noformat else safe(line.strip())
 
             line = infile.readline()
 
@@ -373,7 +413,11 @@ def replace(text, values, variables=None, left='%', right='%'):
         variables = values
 
     for var, val in values.items():
-        text = text.replace('{}{}{}'.format(left, var, right), replace(val, variables, None, '[', ']') if left == '%' and right == '%' else val)
+        if left == '%' and right == '%':
+            val = replace(val, variables, None, '[', ']')
+        if isinstance(text, safe):
+            val = escape(val)
+        text = text.replace('{}{}{}'.format(left, var, right), val)
 
     return text
 
@@ -583,6 +627,7 @@ def main():
                 else:
                     convert(infile, outfile)
             except RuntimeError:
+                logger.exception('Error while parsing input')
                 sys.exit(2)
 
 
