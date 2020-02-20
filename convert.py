@@ -14,7 +14,7 @@ class safe(str):
 
     def __add__(self, rhs):
         if not isinstance(rhs, safe):
-            raise RuntimeError('Attempted concatenation of \'safe\' and unsafe strings')
+            raise RuntimeError('Attempted concatenation of \'safe\' and unsafe strings:\n{}\n{}'.format(repr(self), repr(rhs)))
         s = super().__add__(rhs)
         return safe(s)
 
@@ -22,13 +22,13 @@ class safe(str):
         def checkiter(iter):
             for elem in iter:
                 if not isinstance(elem, safe):
-                    raise RuntimeError('Attempted join on \'safe\' and unsafe strings')
+                    raise RuntimeError('Attempted join on \'safe\' and unsafe strings:\n{}\n{}'.format(repr(self), repr(elem)))
                 yield elem
         return safe(super().join(checkiter(iter), *args, **kwargs))
 
     def replace(self, old, new, *args, **kwargs):
         if not isinstance(new, safe):
-            raise RuntimeError('Attempted replacement of \'safe\' and unsafe strings')
+            raise RuntimeError('Attempted replacement of \'safe\' and unsafe strings:\n{}\n{}'.format(repr(self), repr(new)))
         s = super().replace(old, new, *args, **kwargs)
         return safe(s)
 
